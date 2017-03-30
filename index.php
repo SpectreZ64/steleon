@@ -8,10 +8,34 @@
 		<script type = "text/javascript" src = "scripts/main.js"></script>
 	</head> 
 	<body>
+		<div id="loader_data" class="hidden">
+			<div id="magic_cards_data">
+				<?php
+					//Построение списка боевых единиц
+					$row = 1;
+					$number = 0;
+					if (($handle = fopen("data/magicCards.csv", "r")) !== FALSE) {
+						while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+							$num = count($data);
+							$params = [];
+							$count = 0;
+							for ($c=0; $c < $num; $c++) {//Сбор массива параметров
+								if ($data[$c] == '') continue;
+								array_push($params, $data[$c]);
+							};
+							echo ('<div class="magic_card_data" data-num="' . $row . '" data-params="');
+							echo (htmlspecialchars(json_encode($params, JSON_UNESCAPED_UNICODE)));
+							echo ('"></div>');
+							$row++;
+						};
+						fclose($handle);
+					};
+				?>
+			</div>
+		</div>
 		<div class="background"></div>
 		<div id="tooltip"></div>
 		<div class="board">
-			<div id="bones_place" class="bones_wrapper"></div>
 			<div class="content_wrapper">
 				<div class="closed page" id="mode_selector"><!--Выбор режима игры-->
 					<div class="button mode_btn mode_traditional" data-mode="0">Традиция</div>
@@ -83,12 +107,22 @@
 				</div>
 				<div class="closed page" id="players_order"><!--Информация о порядке ходов игроков-->
 					<div class="info_text">
-						<p>Порядок ходов игроков определен случайным образом:</p>
+						<p>Порядок ходов игроков определен<br>случайным образом:</p>
+					</div>
+					<div class="bottom_panel">
+						<div class="button orange" id="first_turn">Ход игрока</div>
 					</div>
 				</div>
 				<div class="closed page" id="phase_magic"><!--Фаза магии-->
 					<div class="button green" id="make_magic">Применить магию</div>
 					<div class="button orange" id="get_magic_card">Изучить магию</div>
+				</div>
+				<div class="closed page phase_magic" id="phase_magic_get">
+					<div class="info_text"></div>
+					<div class="bones_wrapper"></div>
+					<div class="bottom_panel">
+						<div class="button orange next_phase">Готово</div>
+					</div>
 				</div>
 			</div>
 		</div>

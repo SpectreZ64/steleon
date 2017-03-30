@@ -1,1 +1,0 @@
-alert('fckyou!!1'); 

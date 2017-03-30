@@ -2,12 +2,26 @@
 /*-------------------------------------------------------------------------------------------------*/
 /*NORMALIZE.CSS*/
 html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:700}dfn{font-style:italic}h1{font-size:2em;margin:.67em 0}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-.5em}sub{bottom:-.25em}img{border:0}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type="button"],
-input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}legend{border:0;padding:0}textarea{overflow:auto}optgroup{font-weight:700}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}.noselect, img, label, .label, .button {user-select: none;-moz-user-select: -moz-none;-ms-user-select: none;-webkit-user-select: none;-o-user-select: none;-khtml-user-select: none;cursor: default;}
+input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}legend{border:0;padding:0}textarea{overflow:auto}optgroup{font-weight:700}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}.noselect, img, label, .label, .button {user-select: none;-moz-user-select: -moz-none;-ms-user-select: none;-webkit-user-select: none;-o-user-select: none;-khtml-user-select: none;cursor: default;}.hidden{display: none;}
 /*-------------------------------------------------------------------------------------------------*/
 /*Анимации*/
 @keyframes bone_in{
 	0% {opacity: 0; transform: scale(1.7);}
 	100% {opacity: 1; transform: scale(1);}
+}
+@keyframes card_in{
+	0% {opacity: 1; transform: translate(0px, -10px);}
+	100% {opacity: 1; transform: translate(0px, 0px);}
+}
+@keyframes delay_in{
+	0% {opacity: 0;}
+	50% {opacity: 0;}
+	100% {opacity: 1;}
+}
+@keyframes button_in{
+	0% {opacity: 0; transform: translate(0px, -10px);}
+	20% {opacity: 0; transform: translate(0px, -10px);}
+	100% {opacity: 1; transform: translate(0px, 0px);}
 }
 @keyframes tooltip{
 	0% {opacity: 0; transform: scale(0.8);}
@@ -70,6 +84,10 @@ input{
 	-webkit-box-shadow: inset 0px 6px 8px 0px rgba(0,0,0,0.49);
 	-moz-box-shadow: inset 0px 6px 8px 0px rgba(0,0,0,0.49);
 	box-shadow: inset 0px 6px 8px 0px rgba(0,0,0,0.49);
+	animation: delay_in;
+	animation-duration: 1s;
+	-webkit-animation: delay_in;
+	-webkit-animation-duration: 1s;
 }
 .background{
 	position: fixed;
@@ -80,7 +98,8 @@ input{
 }
 .board{
 	width: 934px;
-	height: 963px;
+	max-height: 963px;
+	height: 100vh;
 	position: absolute;
 	top: 0px;
 	left: 0px;
@@ -88,7 +107,9 @@ input{
 	bottom: 0px;
 	margin: auto;
 	background-image: url('images/board.png');
-	background-size: contain;
+	background-size: 100%;
+	background-position: center center;
+	background-repeat: no-repeat;
 	transition: 0.35s;
 	text-align: center;
 }
@@ -103,12 +124,13 @@ input{
 	align-content: center;
 	-webkit-flex-wrap: wrap;
 	flex-wrap: wrap;
-	position: absolute;
+	position: relative;
 }
 .bones_wrapper{
-	width: 90%;
-	height: 90%;
-	margin: 5%;
+	width: 100%;
+	margin: auto;
+	margin-top: 60px;
+	left: 0px;
 }
 .content_wrapper{
 	width: 100%;
@@ -123,7 +145,7 @@ input{
 }
 .bottom_panel{
 	position: absolute;
-	bottom: 40px;
+	bottom: 15px;
 	left: 10%;
 	width: 80%;
 }
@@ -176,6 +198,10 @@ input{
 	position: relative;
 	cursor: pointer;
 	transition: 0.3s;
+	animation: button_in;
+	animation-duration: 0.5s;
+	-webkit-animation: button_in;
+	-webkit-animation-duration: 0.5s;
 }
 .unit_card:hover{
 	-webkit-box-shadow: 0px 6px 6px 0px rgba(0,0,0,0.4);
@@ -277,6 +303,10 @@ input{
 	text-align: center;
 	margin: 10px auto;
 	cursor: pointer;
+	animation: button_in;
+	animation-duration: 0.5s;
+	-webkit-animation: button_in;
+	-webkit-animation-duration: 0.5s;
 }
 .mode_btn{
 	width: 481px;
@@ -284,6 +314,10 @@ input{
 	background-size: 100% 100%;
 	text-shadow: 0px 0px 3px #FFF;
 	transition: 0.3s;
+	animation: delay_in;
+	animation-duration: 1s;
+	-webkit-animation: delay_in;
+	-webkit-animation-duration: 1s;
 }
 .mode_btn:hover{
 	text-shadow: 0px 0px 8px #FFF;
@@ -310,28 +344,89 @@ input{
 	text-shadow:  0px 0px 8px #FFBB4F;
 }
 .green{
-	color: #96f9a2;
-	text-shadow: 0px 0px 3px #96f9a2;
+	color: #a3feff;
+	text-shadow: 0px 0px 3px #a3feff;
 	transition: 0.3s;
 }
 .green:hover{
 	color: #FFF;
-	text-shadow:  0px 0px 8px #96f9a2;
+	text-shadow:  0px 0px 8px #a3feff;
 }
 
-.current_player_name{
-	position: absolute;
-	top: 0px;
-	left: 0px;
-	width: 100%;
-	text-align: center;
+.info_text{
+	color: #f1e2d0;
+	font-size: 22pt;
+	text-shadow: 0px -1px 1px #000;
+	padding: 0px 70px;
+	font-family: Basic;
+	animation: delay_in;
+	animation-duration: 1s;
+	-webkit-animation: delay_in;
+	-webkit-animation-duration: 1s;
+}
+.info_text p{
+	margin: 5px 0;
+}
+.info_text .player_name{
 	font-size: 48px;
 	font-family: Calligraphic;
 	color: #FFF;
 }
 /*-------------------------------------------------------------------------------------------------*/
+/*Интерфейс вокруг доски*/
+.current_player_name{
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	font-size: 24px;
+	font-family: Basic;
+	color: #FFF;
+}
+.units_list{
+	width: 150px;
+	right: 0px;
+	top: 50px;
+	position: absolute;
+}
+.units_list .unit_card{
+	width: 40px;
+	height: 40px;
+	top: 0px;
+	margin-bottom: 0px;
+	border-color: #8b4115;
+	cursor: default;
+}
+.units_list .unit_card:hover{
+	top: 0px;
+	-webkit-box-shadow: 0px 2px 2px 0px rgba(0,0,0,0.75);
+	-moz-box-shadow: 0px 2px 2px 0px rgba(0,0,0,0.75);
+	box-shadow: 0px 2px 2px 0px rgba(0,0,0,0.75);
+	border-color: #ffbf35;
+}
+.units_list .unit_card:after{
+	display: none;
+}
+.magic_cards_stack{
+	position: absolute;
+	left: 6px;
+	bottom: 60px;
+	width: 200px;
+}
+.magic_card{
+	width: 200px;
+	height: 268px;
+	margin-top: -230px;
+	background-image: url('images/magic_card.png');
+	background-size: 100%;
+	display: inline-block;
+	animation: card_in;
+	animation-duration: 0.5s;
+	-webkit-animation: card_in;
+	-webkit-animation-duration: 0.5s;
+}
+/*-------------------------------------------------------------------------------------------------*/
 /*Медиа-запросы*/
-@media (max-height: 963px){
+@media (max-height: 900px){
 	.board{
 		width: 720px;
 		height: 742px;
@@ -405,6 +500,24 @@ input{
 	.label{
 		font-size: 12px;
 		letter-spacing: 0px;
+	}
+	.info_text{
+		font-size: 18px;
+	}
+	.unit_card{
+		width: 52px;
+		height: 52px;
+	}
+	.unit_card:after{
+		width: 56px;
+		height: 64px;
+		background-size: 100%;
+		top: -3px;
+		left: -2px;
+	}
+	.magic_card{
+		width: 160px;
+		height: 214px;
 	}
 }
 @media (max-height: 516px){
