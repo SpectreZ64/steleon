@@ -9,6 +9,7 @@
 	</head> 
 	<body>
 		<div class="background"></div>
+		<div id="tooltip"></div>
 		<div class="board">
 			<div id="bones_place" class="bones_wrapper"></div>
 			<div class="content_wrapper">
@@ -24,47 +25,76 @@
 						<br>
 					</div>
 					<div class="bottom_panel">
-						<div class="button orange" id="setPlayer">Выбрать Армию</div>
+						<div class="button orange" id="set_player">Выбрать Армию</div>
 					</div>
 				</div>
 				<div class="closed page" id="army_editor"><!--Выбор армии игрока-->
 					<div class="side_panel">
 						<p class="label">Доступные войска:</p>
-						<div class="army_panel">
-							<?php
-								//Построение списка боевых единиц
-								$row = 1;
-								if (($handle = fopen("data/units.csv", "r")) !== FALSE) {
-									$headers = [];
-									while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
-										$num = count($data);
-										if ($row == 1){//Создание массива заголовков
-											for ($c=0; $c < $num; $c++){
-												array_push($headers, $data[$c]);
-											}
+						<div class="army_panel" id="common_army">
+							<div class="scroll_wrapper">
+								<?php
+									//Построение списка боевых единиц
+									$row = 1;
+									$number = 0;
+									if (($handle = fopen("data/units.csv", "r")) !== FALSE) {
+										$headers = [];
+										while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+											$num = count($data);
+											if ($row == 1){//Создание массива заголовков
+												for ($c=0; $c < $num-1; $c++){
+													array_push($headers, $data[$c]);
+												}
+												$row++;
+												continue;
+											};
+											$params = [];
+											$count = 0;
+											for ($c=0; $c < $num; $c++) {//Сбор массива параметров
+												if ($c < $num-1) $params[$headers[$c]] = $data[$c];
+												else $count = $data[$c];
+											};
+											for ($i=0; $i < $count; $i++){
+												echo ('<div class="unit_card common_unit" data-num="' . $number . '" data-params="');
+												echo (htmlspecialchars(json_encode($params)));
+												echo ('"></div>');
+												$number++;
+											};
 											$row++;
-											continue;
 										};
-										$params = [];
-										for ($c=0; $c < $num; $c++) {//Сбор массива параметров
-											$params[$headers[$c]] = $data[$c];
-										};
-										echo ('<div class="unit_card" data-params="');
-										echo (htmlspecialchars(json_encode($params)));
-										echo ('"></div>');
-										$row++;
+										fclose($handle);
 									};
-									fclose($handle);
-								};
-							?>
+								?>
+							</div>
 						</div>
 					</div>
 					<div class="side_panel">
 						<p class="label">Армия игрока:</p>
-						<div class="army_panel"></div>
+						<div class="army_panel"><div class="scroll_wrapper" id="player_army"></div></div>
 					</div>
+					<div style="height: 80px;"></div>
+					<div class="bottom_panel">
+						<div class="button orange" id="set_army">Готово</div>
+					</div>
+				</div>
+				<div class="closed page" id="game_starter"><!--Добавление нового игрока или старт игры-->
+					<div class="button green" id="add_player">Добавить игрока</div>
+					<div class="button orange" id="start_game">Начать игру</div>
+				</div>
+				<div class="closed page" id="players_order"><!--Информация о порядке ходов игроков-->
+					<div class="info_text">
+						<p>Порядок ходов игроков определен случайным образом:</p>
+					</div>
+				</div>
+				<div class="closed page" id="phase_magic"><!--Фаза магии-->
+					<div class="button green" id="make_magic">Применить магию</div>
+					<div class="button orange" id="get_magic_card">Изучить магию</div>
 				</div>
 			</div>
 		</div>
+		<div class="current_player_name"></div>
+		<div class="magic_cards_stack"></div>
+		<div class="active_spells"></div>
+		<div class="units_list"></div>
 	</body> 
 </html>
