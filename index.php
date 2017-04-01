@@ -114,14 +114,38 @@
 					</div>
 				</div>
 				<div class="closed page" id="phase_magic"><!--Фаза магии-->
-					<div class="button green" id="make_magic">Применить магию</div>
+					<div class="button green" id="spell_magic">Применить магию</div>
 					<div class="button orange" id="get_magic_card">Изучить магию</div>
 				</div>
-				<div class="closed page phase_magic" id="phase_magic_get">
+				<div class="closed page phase_magic" id="phase_magic_get"><!--Получение карты магии-->
 					<div class="info_text"></div>
 					<div class="bones_wrapper"></div>
 					<div class="bottom_panel">
 						<div class="button orange next_phase">Готово</div>
+					</div>
+				</div>
+				<div class="closed page phase_magic" id="phase_magic_spell"><!--Применение карты магии-->
+					<div class="info_text"></div>
+					<div class="actions_list"></div>
+					<div class="bottom_panel">
+						<div class="button orange next_phase">Далее</div>
+					</div>
+				</div>
+				<div class="closed page" id="units_selector"><!--Окно выбора боевых единиц игрока-->
+					<div class="info_text"></div>
+					<div class="army_panel"><div class="scroll_wrapper"></div></div>
+					<div class="bottom_panel">
+						<div class="button orange">Выбрать</div>
+					</div>
+				</div>
+				<div class="closed page" id="enemys_selector"><!--Окно выбора противника-->
+					<div class="info_text">Выберите противника:</div>
+					<div id="enemys_list"></div>
+				</div>
+				<div class="closed page" id="message"><!--Окно сообщения-->
+					<div class="info_text"></div>
+					<div class="bottom_panel">
+						<div class="button orange next_phase">Понятно</div>
 					</div>
 				</div>
 			</div>

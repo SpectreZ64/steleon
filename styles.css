@@ -367,6 +367,10 @@ input{
 .info_text p{
 	margin: 5px 0;
 }
+.info_text p.help{
+	color: #9eff2c;
+	margin-top: 22px;
+}
 .info_text .player_name{
 	font-size: 48px;
 	font-family: Calligraphic;

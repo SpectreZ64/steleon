@@ -38,10 +38,16 @@ var steleon = {
 		else{
 			s.resetMods(s.curPlayer);//Сброс модификаторов
 			s.curPlayer = s.curPlayer + 1;
-			if (s.curPlayer = s.players.length) s.curPlayer = 0;
+			if (s.curPlayer == s.players.length) s.curPlayer = 0;
 		};
 		view.showPlayerParams();
-		s.stageMagic();
+		var phases = s.players[s.curPlayer].mods.phases;
+		if(phases.all <= 0) view.showMessage('Магия вашего противника препятствует всем вашим действиям в этом ходе.')
+		else if(phases.magic <= 0) view.showMessage('Заклинания вашего противника лишают вас возможности применить и изучить магию в этом ходе.')
+		else if(phases.move <= 0) view.showMessage('Заклинания противника препятствуют вашим манёврам в этом ходе.')
+		else if(phases.fight <= 0) view.showMessage('Магия вашего противника лишает вас возможности вести рукопашный бой в этом ходе.')
+		else if(phases.shoot <= 0) view.showMessage('Магия противника препятствует вашим войскам вести стрельбу в этом ходе.')
+		else s.changePhase();
 	},
 	//Загрузить карты боевых единиц в массив
 	loadUnitCards: function(){
@@ -144,17 +150,27 @@ var steleon = {
 				return false;
 			};
 			console.log('!!');
-			steleon.magicCards.concat(steleon.magicCardsTrash);//Возврат используемых карт магии
+			steleon.magicCards = JSON.parse(JSON.stringify(steleon.magicCardsTrash))
 			steleon.magicCardsTrash = [];
-			shuffle(steleon.magicCrads);
+			shuffle(steleon.magicCards);
 		};
 		steleon.players[player].magicCards.push(steleon.magicCards[0]);
 		steleon.magicCards.splice(0, 1);
 		return true;
 	},
-	//Начать фазу магии
-	stageMagic: function(){
-		view.openScreen(view.screens.phaseMagic);
+	//Начать фазу
+	changePhase: function(){
+		var playerPhases = steleon.players[steleon.curPlayer].mods.phases;
+		if (playerPhases.all < 1){
+			steleon.changePlayer();
+		};
+		if (playerPhases.magic > 0){//Переход к фазе магии
+			view.openScreen(view.screens.phaseMagic);
+			playerPhases.magic--;
+			playerPhases.all--;//В КОНЦЕ ПОСЛЕДНЕЙ ФАЗЫ!!!
+			return;
+		};
+		playerPhases.all--;
 	},
 	//Установить режим игры
 	setMode: function(val){
@@ -169,12 +185,12 @@ var steleon = {
 		if (bone == 6){
 			steleon.getMagicCard(s.curPlayer);
 			steleon.getMagicCard(s.curPlayer);
-			view.makeMagicList(s.curPlayer, '.magic_cards_stack');
+			view.updateMagicStack();
 			view.showInfo(view.getRandomPhrase(magicAnswers6) + '<br>Вы получили сразу две карты магии!', '#phase_magic_get .info_text')
 		}
 		else if(bone > 3){
 			steleon.getMagicCard(s.curPlayer);
-			view.makeMagicList(s.curPlayer, '.magic_cards_stack');
+			view.updateMagicStack();
 			view.showInfo(view.getRandomPhrase(magicAnswers4) + '<br>Вы получили карту магии!', '#phase_magic_get .info_text')
 		}
 		else{
@@ -183,7 +199,59 @@ var steleon = {
 	},
 	//Применение карты магии
 	phaseMagic_SpellMagic: function(){
-		
+		var card = steleon.players[steleon.curPlayer].magicCards[0];
+		var text = card[0];
+		var button = '';
+		if (card[1] == 'moving'){//перемещение
+			if (card[2] == 'simple'){//простое
+				text = card[0] + '<p class="help">выполните действия на игровом поле</p>';
+				button = 'Выполнено';
+			};
+		};
+		if (card[1] == 'playerMod'){//модификация параметров игрока
+			if (card[3] == 'select'){
+				if (steleon.players.length == 2) steleon.modifiers.init(steleon.players.length - 1 - steleon.curPlayer, card)//если только 2 игрока
+				else (view.showEnemysList('Выбрать противника', '#phase_magic_spell .actions_list', card));//если игроков более двух
+			}
+		};
+		view.showInfo(text, '#phase_magic_spell .info_text');
+		if(button == ''){
+			jQ('#phase_magic_spell .bottom_panel .button').hide();
+		}
+		else{
+			view.setButtonText(button, '#phase_magic_spell .bottom_panel .button');
+			jQ('#phase_magic_spell .bottom_panel .button').show();
+		};
+		steleon.magicCardsTrash.push(card);
+		steleon.players[steleon.curPlayer].magicCards.splice(0, 1);
+		view.updateMagicStack();
+	},
+	//Модификаторы параметров
+	modifiers: {
+		init: function(player, card){
+			switch(card[1]){
+				case 'playerMod': 
+					steleon.modifiers.player(player, card);//установка модификаторов для игрока
+					break;
+			};
+			steleon.changePhase();
+		},
+		player: function(player, card){
+			var phases = steleon.players[player].mods.phases;
+			if(card[2] == 'turn'){
+				phases.all = (card[4] == 'null') ? 1 : phases.all + Number(card[4]);
+				phases.magic = (card[5] == 'null') ? 1 : phases.magic + Number(card[5]);
+				phases.move = (card[6] == 'null') ? 1 : phases.move + Number(card[6]);
+				phases.fight = (card[7] == 'null') ? 1 : phases.fight + Number(card[7]);
+				phases.shoot = (card[8] == 'null') ? 1 : phases.shoot + Number(card[8]);
+			};
+		},
+		units: function(type, player, units, params){
+			//
+		},
+		magic: function(type, player, count, condition){
+			//
+		}
 	}
 };
 //------------------------------------------------------------------------------------------------
@@ -195,13 +263,19 @@ var view = {
 		v = view;
 		s = steleon;
 		//Экраны
-		v.screens.modeSelector = jQ('#mode_selector');
-		v.screens.playerCreator = jQ('#player_creator');
-		v.screens.armyEditor = jQ('#army_editor');
-		v.screens.gameStarter = jQ('#game_starter');
-		v.screens.playersOrder = jQ('#players_order');
-		v.screens.phaseMagic = jQ('#phase_magic');
-		v.screens.getMagicCard = jQ('#phase_magic_get');
+		v.screens = {
+			modeSelector: jQ('#mode_selector'),
+			playerCreator: jQ('#player_creator'),
+			armyEditor: jQ('#army_editor'),
+			gameStarter: jQ('#game_starter'),
+			playersOrder: jQ('#players_order'),
+			phaseMagic: jQ('#phase_magic'),
+			getMagicCard: jQ('#phase_magic_get'),
+			spellMagic: jQ('#phase_magic_spell'),
+			unitsSelector: jQ('#units_selector'),
+			enemysSelector: jQ('#enemys_selector'),
+			message: jQ('#message')
+		};
 		//События кнопок
 		jQ('.mode_btn').click(function(){//Режим игры
 			if (jQ(this).hasClass('disabled')) return;
@@ -228,12 +302,16 @@ var view = {
 		jQ('#add_player').click(function(){//Переход к добавлению игрока
 			v.openScreen(v.screens.playerCreator);
 		});
-		jQ('#get_magic_card').click(function(){
+		jQ('#get_magic_card').click(function(){//Переход к получению карты магии
 			v.openScreen(v.screens.getMagicCard);
 			s.phaseMagic_GetCard();
 		});
-		jQ('.next_phase').click(function(){
-			s.phaseMagic_GetCard();
+		jQ('#spell_magic').click(function(){//Переход к применению магии
+			v.openScreen(v.screens.spellMagic);
+			s.phaseMagic_SpellMagic();
+		});
+		jQ('.next_phase').click(function(){//Переход на следующую фазу
+			s.changePhase();
 		});
 		//--------------
 		//РЕДАКТОР АРМИИ
@@ -274,7 +352,13 @@ var view = {
 	showPlayerParams: function(){
 		jQ('.current_player_name').text(steleon.players[s.curPlayer].name);
 		view.makeUnitsList(steleon.curPlayer, '.units_list');
-		view.makeMagicList(steleon.curPlayer, '.magic_cards_stack')
+		view.updateMagicStack();
+		jQ('#spell_magic').show();
+		if(steleon.players[steleon.curPlayer].magicCards.length == 0) jQ('#spell_magic').hide();
+	},
+	//Обновить список карт игрока в интерфейсе
+	updateMagicStack: function(){
+		view.makeMagicList(steleon.curPlayer, '.magic_cards_stack');
 	},
 	//Построить разметку списка боевых единиц игрока
 	makeUnitsList: function(playerNum, target){
@@ -291,6 +375,19 @@ var view = {
 		steleon.players[playerNum].magicCards.forEach(function(card, i){
 			jQ(target).append('<div class="magic_card" data-num="' + i + '"></div>');
 		});
+	},
+	//Построить разметку списка игроков-противников
+	makeEnemysList: function(card){
+		jQ('#enemys_list').html('');
+		steleon.players.forEach(function(enemy, i){
+			if (i == steleon.curPlayer) return;
+			jQ('#enemys_list').append('<div class="button orange" data-num="' + i + '">'+ enemy.name +'</div>');
+			jQ('#enemys_list .button').click(function(){//нажатие на элемент списка игроков
+				var selectedPlayer = jQ(this).attr('data-num');
+				steleon.modifiers.init(selectedPlayer, card);
+			});
+		});
+		view.openScreen(view.screens.enemysSelector);
 	},
 	//Назначить события всплывающей подсказки
 	bindUnitsTooltip: function(target, source){//Назначить всплывающие подсказки
@@ -313,13 +410,28 @@ var view = {
 		jQ('#tooltip').html('');
 		jQ('#tooltip').hide();
 	},
+	//Установить текст для кнопки
+	setButtonText: function(text, button){
+		jQ(button).text('');
+		jQ(button).text(text);
+	},
+	//Создать кнопку для отображекния списка врагов
+	showEnemysList: function(text, target, card){
+		jQ(target).html('');
+		jQ(target).append('<div class="button orange select_player">'+ text +'</div>');
+		jQ('.select_player').click(function(){//Выбрать игрока из списка
+			view.makeEnemysList(card);
+			jQ(target).html('');
+		});
+	},
 	//Вывод текста в элемент
 	showInfo: function(text, elem){
 		jQ(elem).html('');
 		jQ(elem).html(text);
 	},
-	showMessage: function(){//Вывод окна с подсказкой...
-		//
+	showMessage: function(text){//Вывод окна с подсказкой...
+		view.showInfo(text, '#message .info_text');
+		view.openScreen(view.screens.message);
 	},
 	//Убрать кости
 	removeBones: function(){
