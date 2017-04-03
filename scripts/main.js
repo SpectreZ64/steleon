@@ -12,66 +12,92 @@ function isMobile(){
 }
 //--------------------------------------------------------------------------------------------
 //ЛОГИКА
-var steleon = {
+var s = {
 	mode: 0,
 	players: [],
 	curPlayer: 0,
 	unitCards: [],
 	magicCards: [],
 	magicCardsTrash: [],
+	modes: [
+		{
+			name: 'Традиция',
+			className: 'mode_traditional',
+			enabled: true
+		},
+		{
+			name: 'Ультра',
+			className: 'mode_ultra',
+			enabled: false
+		},
+		{
+			name: 'Бронепехота',
+			className: 'mode_marines',
+			enabled: false
+		}
+	],
 	//Инициализация
 	init: function(){
-		var s = steleon;
-		view.init();
-		view.openScreen(view.screens.modeSelector);
-		//--------------
+		e.modeMenu();
+		//Загрузка данных из таблиц
 		s.loadUnitCards();
 		s.loadMagicCards();
-		view.bindUnitsTooltip('.common_unit', s.unitCards);
 	},
 	//Смена игрока
 	changePlayer: function(firstTurn){
-		var s = steleon;
 		if (firstTurn == true){
 			s.curPlayer = 0;
 		}
 		else{
+			if (s.players[s.curPlayer].mods.phases.all > 0){
+				s.resetMods(s.curPlayer);//Сброс модификаторов
+				e.message('Силами магии игрок <span class="important_text">' + s.players[s.curPlayer].name + '</span> получает право ходить ещё раз!');
+				return;
+			};
 			s.resetMods(s.curPlayer);//Сброс модификаторов
 			s.curPlayer = s.curPlayer + 1;
 			if (s.curPlayer == s.players.length) s.curPlayer = 0;
 		};
-		view.showPlayerParams();
+		v.showPlayerParams();
 		var phases = s.players[s.curPlayer].mods.phases;
-		if(phases.all <= 0) view.showMessage('Магия вашего противника препятствует всем вашим действиям в этом ходе.')
-		else if(phases.magic <= 0) view.showMessage('Заклинания вашего противника лишают вас возможности применить и изучить магию в этом ходе.')
-		else if(phases.move <= 0) view.showMessage('Заклинания противника препятствуют вашим манёврам в этом ходе.')
-		else if(phases.fight <= 0) view.showMessage('Магия вашего противника лишает вас возможности вести рукопашный бой в этом ходе.')
-		else if(phases.shoot <= 0) view.showMessage('Магия противника препятствует вашим войскам вести стрельбу в этом ходе.')
-		else s.changePhase();
+		if(phases.all <= 0){
+			e.message('<p>Ход игрока <span class="important_text">' + s.players[s.curPlayer].name + '</span>!</p>' + '<p>Магия вашего противника препятствует всем вашим действиям в этом ходе.</p>');
+			return;
+		}
+		else if(phases.magic <= 0) e.message('<p>Ход игрока <span class="important_text">' + s.players[s.curPlayer].name + '</span>!</p>' + '<p>Заклинания вашего противника лишают вас возможности применить и изучить магию в этом ходе.</p>')
+		else if(phases.move <= 0) e.message('<p>Ход игрока <span class="important_text">' + s.players[s.curPlayer].name + '</span>!</p>' + '<p>Заклинания противника препятствуют вашим манёврам в этом ходе.</p>')
+		else if(phases.fight <= 0) e.message('<p>Ход игрока <span class="important_text">' + s.players[s.curPlayer].name + '</span>!</p>' + '<p>Магия вашего противника лишает вас возможности вести рукопашный бой в этом ходе.</p>')
+		else if(phases.shoot <= 0) e.message('<p>Ход игрока <span class="important_text">' + s.players[s.curPlayer].name + '</span>!</p>' + '<p>Магия противника препятствует вашим войскам вести стрельбу в этом ходе.</p>')
+		else e.message('Ход игрока <span class="important_text">' + s.players[s.curPlayer].name + '</span>!');
 	},
 	//Загрузить карты боевых единиц в массив
 	loadUnitCards: function(){
-		jQ('.unit_card').each(function(i, elem){
+		jQ('.unit_card_data').each(function(i, elem){
 			card = jQ.parseJSON(jQ(elem).attr('data-params'));
-			steleon.unitCards.push(card);
-			jQ(elem).css('background-image', 'url("images/units/' + card.picture + '.png")');
+			card.used = false;
+			s.unitCards.push(card);
 		});
 	},
 	//Загрузить карты магии в массив
 	loadMagicCards: function(){
 		jQ('#magic_cards_data .magic_card_data').each(function(i, elem){
 			card = jQ.parseJSON(jQ(elem).attr('data-params'));
-			steleon.magicCards.push(card);
+			s.magicCards.push(card);
 		});
-		shuffle(steleon.magicCards);
+		shuffle(s.magicCards);
 	},
 	//Бросить игровую кость
-	createBone: function(target){
-		var a = Math.round(Math.random() * 5 + 1);
-		var bone = jQ(document.createElement('div'));
-		bone.addClass('bone bone' + a);
-		bone.appendTo(target + ' .bones_wrapper');
-		return a;
+	createBones: function(count = 1){
+		var result = 0;
+		if (jQ('.bones_wrapper').length == 0) jQ('<div class="bones_wrapper"></div>').appendTo('.content_wrapper');
+		for (var i = 0; i < count; i++){
+			var a = Math.round(Math.random() * 5 + 1);
+			var bone = jQ(document.createElement('div'));
+			bone.addClass('bone bone' + a);
+			bone.appendTo('.bones_wrapper');
+			result = result + a;
+		};
+		return result;
 	},
 	//Записать информацию об игроке
 	addPlayer: function(){
@@ -80,21 +106,19 @@ var steleon = {
 			magicCards: [],
 			army: []
 		};
-		steleon.players.push(player);
-		steleon.curPlayer = steleon.players.length - 1;
-		steleon.getMagicCard(steleon.curPlayer);
-		view.openScreen(view.screens.armyEditor);
-		jQ('#player_name').val('');
+		s.players.push(player);
+		s.curPlayer = s.players.length - 1;
+		s.getMagicCard(s.curPlayer);
 	},
 	//Установка модификаторов боевых единиц
 	setUnitsMods: function(player, mods){
-		steleon.players[player].army.forEach(function(unit, i){
+		s.players[player].army.forEach(function(unit, i){
 			unit.mods = mods;
 		});
 	},
 	//Установка модификаторов игрока
 	setPlayerMods: function(player, mods){
-		steleon.players[player].mods = mods;
+		s.players[player].mods = mods;
 	},
 	resetMods: function(player){
 		var playerMods = {
@@ -107,7 +131,7 @@ var steleon = {
 				shoot: 1
 			}
 		};
-		steleon.setPlayerMods(steleon.curPlayer, playerMods);//сброс модификаторов игрока
+		s.setPlayerMods(s.curPlayer, playerMods);//сброс модификаторов игрока
 		var unitsMods = {
 			inc: {
 				move: 0,
@@ -134,116 +158,78 @@ var steleon = {
 				shoot: 1
 			}
 		};
-		steleon.setUnitsMods(steleon.curPlayer, unitsMods);//сброс модификаторов боевых единиц
-	},
-	//Определить последовательность ходов игроков
-	setPlayersOrder: function(){
-		shuffle(steleon.players);
-		view.showPlayersOrder();
-		view.openScreen(view.screens.playersOrder);
+		s.setUnitsMods(s.curPlayer, unitsMods);//сброс модификаторов боевых единиц
 	},
 	//Выдать магическую карту
 	getMagicCard(player){
-		if (steleon.magicCards.length == 0){
-			if (steleon.magicCardsTrash.length == 0){
-				view.showMessage('Магические карты закончились!');
+		if (s.magicCards.length == 0){
+			if (s.magicCardsTrash.length == 0){
+				e.message('Магические карты закончились!');
 				return false;
 			};
-			console.log('!!');
-			steleon.magicCards = JSON.parse(JSON.stringify(steleon.magicCardsTrash))
-			steleon.magicCardsTrash = [];
-			shuffle(steleon.magicCards);
+			s.magicCards = JSON.parse(JSON.stringify(s.magicCardsTrash))
+			s.magicCardsTrash = [];
+			shuffle(s.magicCards);
 		};
-		steleon.players[player].magicCards.push(steleon.magicCards[0]);
-		steleon.magicCards.splice(0, 1);
+		s.players[player].magicCards.push(s.magicCards[0]);
+		s.magicCards.splice(0, 1);
 		return true;
 	},
 	//Начать фазу
 	changePhase: function(){
-		var playerPhases = steleon.players[steleon.curPlayer].mods.phases;
+		var playerPhases = s.players[s.curPlayer].mods.phases;
 		if (playerPhases.all < 1){
-			steleon.changePlayer();
+			s.changePlayer();
+			return;
 		};
 		if (playerPhases.magic > 0){//Переход к фазе магии
-			view.openScreen(view.screens.phaseMagic);
+			e.phaseMagic();
 			playerPhases.magic--;
-			playerPhases.all--;//В КОНЦЕ ПОСЛЕДНЕЙ ФАЗЫ!!!
+			return;
+		};
+		if (playerPhases.move > 0){//Переход к фазе магии
+			e.phaseMove();
+			playerPhases.move--;
+			return;
+		};
+		if (playerPhases.fight > 0){//Переход к фазе магии
+			e.phaseFight();
+			playerPhases.fight--;
+			return;
+		};
+		if (playerPhases.shoot > 0){//Переход к фазе магии
+			e.phaseShoot();
+			playerPhases.shoot--;
 			return;
 		};
 		playerPhases.all--;
+		s.changePlayer();
 	},
-	//Установить режим игры
-	setMode: function(val){
-		mode = val;
-		view.openScreen(view.screens.playerCreator);
-	},
-	//ФАЗЫ ИГРЫ
-	//Получение карты магии
-	phaseMagic_GetCard: function(){
-		view.removeBones();
-		var bone = steleon.createBone('#phase_magic_get');
-		if (bone == 6){
-			steleon.getMagicCard(s.curPlayer);
-			steleon.getMagicCard(s.curPlayer);
-			view.updateMagicStack();
-			view.showInfo(view.getRandomPhrase(magicAnswers6) + '<br>Вы получили сразу две карты магии!', '#phase_magic_get .info_text')
-		}
-		else if(bone > 3){
-			steleon.getMagicCard(s.curPlayer);
-			view.updateMagicStack();
-			view.showInfo(view.getRandomPhrase(magicAnswers4) + '<br>Вы получили карту магии!', '#phase_magic_get .info_text')
-		}
-		else{
-			view.showInfo(view.getRandomPhrase(magicAnswers1) + '<br>Вы не получили карту магии.', '#phase_magic_get .info_text')
-		};
-	},
-	//Применение карты магии
-	phaseMagic_SpellMagic: function(){
-		var card = steleon.players[steleon.curPlayer].magicCards[0];
-		var text = card[0];
-		var button = '';
-		if (card[1] == 'moving'){//перемещение
-			if (card[2] == 'simple'){//простое
-				text = card[0] + '<p class="help">выполните действия на игровом поле</p>';
-				button = 'Выполнено';
-			};
-		};
-		if (card[1] == 'playerMod'){//модификация параметров игрока
-			if (card[3] == 'select'){
-				if (steleon.players.length == 2) steleon.modifiers.init(steleon.players.length - 1 - steleon.curPlayer, card)//если только 2 игрока
-				else (view.showEnemysList('Выбрать противника', '#phase_magic_spell .actions_list', card));//если игроков более двух
-			}
-		};
-		view.showInfo(text, '#phase_magic_spell .info_text');
-		if(button == ''){
-			jQ('#phase_magic_spell .bottom_panel .button').hide();
-		}
-		else{
-			view.setButtonText(button, '#phase_magic_spell .bottom_panel .button');
-			jQ('#phase_magic_spell .bottom_panel .button').show();
-		};
-		steleon.magicCardsTrash.push(card);
-		steleon.players[steleon.curPlayer].magicCards.splice(0, 1);
-		view.updateMagicStack();
+	//Получить стоимость армии игрока
+	getArmyPrice(player){
+		price = 0;
+		s.players[player].army.forEach(function(unit, i){
+			price = price + Number(unit.price);
+		});
+		return price;
 	},
 	//Модификаторы параметров
 	modifiers: {
 		init: function(player, card){
 			switch(card[1]){
 				case 'playerMod': 
-					steleon.modifiers.player(player, card);//установка модификаторов для игрока
+					s.modifiers.player(player, card);//установка модификаторов для игрока
 					break;
 			};
-			steleon.changePhase();
 		},
 		player: function(player, card){
-			var phases = steleon.players[player].mods.phases;
+			var phases = s.players[player].mods.phases;
 			if(card[2] == 'turn'){
-				phases.all = (card[4] == 'null') ? 1 : phases.all + Number(card[4]);
-				phases.magic = (card[5] == 'null') ? 1 : phases.magic + Number(card[5]);
-				phases.move = (card[6] == 'null') ? 1 : phases.move + Number(card[6]);
-				phases.fight = (card[7] == 'null') ? 1 : phases.fight + Number(card[7]);
-				phases.shoot = (card[8] == 'null') ? 1 : phases.shoot + Number(card[8]);
+				phases.all = (card[4] == 'null') ? phases.all : phases.all + Number(card[4]);
+				phases.magic = (card[5] == 'null') ? phases.magic : phases.magic + Number(card[5]);
+				phases.move = (card[6] == 'null') ? phases.move : phases.move + Number(card[6]);
+				phases.fight = (card[7] == 'null') ? phases.fight : phases.fight + Number(card[7]);
+				phases.shoot = (card[8] == 'null') ? phases.shoot : phases.shoot + Number(card[8]);
 			};
 		},
 		units: function(type, player, units, params){
@@ -256,148 +242,102 @@ var steleon = {
 };
 //------------------------------------------------------------------------------------------------
 //ПРЕДСТАВЛЕНИЕ
-var view = {
-	screens: {},
-	curScreen: null,
-	init: function(){
-		v = view;
-		s = steleon;
-		//Экраны
-		v.screens = {
-			modeSelector: jQ('#mode_selector'),
-			playerCreator: jQ('#player_creator'),
-			armyEditor: jQ('#army_editor'),
-			gameStarter: jQ('#game_starter'),
-			playersOrder: jQ('#players_order'),
-			phaseMagic: jQ('#phase_magic'),
-			getMagicCard: jQ('#phase_magic_get'),
-			spellMagic: jQ('#phase_magic_spell'),
-			unitsSelector: jQ('#units_selector'),
-			enemysSelector: jQ('#enemys_selector'),
-			message: jQ('#message')
-		};
-		//События кнопок
-		jQ('.mode_btn').click(function(){//Режим игры
-			if (jQ(this).hasClass('disabled')) return;
-			s.setMode(jQ(this).attr('data-mode'));
+var v = {
+	//Создание разметки меню режимов игры
+	modeMenuInit: function(){
+		s.modes.forEach(function(mode, i){
+			var disabled = ' disabled';
+			if (mode.enabled) disabled = '';
+			jQ('.content_wrapper').append('<div class="button mode_btn '+ mode.className + disabled +'" data-num="'+ i +'">'+ mode.name +'</div>');
 		});
-		jQ('#set_player').click(function(){//Создание игрока
-			if (jQ(this).hasClass('disabled')) return;
-			s.addPlayer();
+		jQ('.mode_btn').click(function(){
+			s.mode = (jQ(this).attr('data-num'));
+			e.newPlayer();
 		});
-		jQ('#start_game').click(function(){//Начало игры
-			if (jQ(this).hasClass('disabled')) return;
-			s.setPlayersOrder();
-		});
-		jQ('#first_turn').click(function(){//Начало игры
-			if (jQ(this).hasClass('disabled')) return;
-			s.changePlayer(true);
-		});
-		jQ('#set_army').click(function(){//Назначение армии игрока
-			if (jQ(this).hasClass('disabled')) return;
-			s.resetMods(s.curPlayer);//Сброс модификаторов
-			v.openScreen(v.screens.gameStarter);
-			jQ('#player_army').html('');
-		});
-		jQ('#add_player').click(function(){//Переход к добавлению игрока
-			v.openScreen(v.screens.playerCreator);
-		});
-		jQ('#get_magic_card').click(function(){//Переход к получению карты магии
-			v.openScreen(v.screens.getMagicCard);
-			s.phaseMagic_GetCard();
-		});
-		jQ('#spell_magic').click(function(){//Переход к применению магии
-			v.openScreen(v.screens.spellMagic);
-			s.phaseMagic_SpellMagic();
-		});
-		jQ('.next_phase').click(function(){//Переход на следующую фазу
-			s.changePhase();
-		});
-		//--------------
-		//РЕДАКТОР АРМИИ
-		//Нажатие на боевых единиц общего списка
-		jQ('.common_unit').click(function(){
-			var sourceNum = jQ(this).attr('data-num');//Индекс в общем списке боевых единиц
-			var unit = s.unitCards[sourceNum];
-			s.players[s.curPlayer].army.push(unit);
-			var num = s.players[s.curPlayer].army.length - 1;
-			jQ('#player_army').append('<div class="unit_card player_unit" data-num="' + num + '" data-source="' + sourceNum + '"></div>');
-			jQ('.player_unit').last().css('background-image', 'url("images/units/' + unit.picture + '.png")');
-			jQ(this).hide();
-			//Нажатие на боевых единиц армии игрока
-			jQ('.player_unit').click(function(){
-				var num = jQ(this).attr('data-num');
-				s.players[s.curPlayer].army.splice(num, 1);
-				num = jQ(this).attr('data-source');
-				jQ('#common_army').find('[data-num="' + num + '"]').show();
-				jQ(this).remove();
-				v.hideTooltip();
+	},
+	//Установить заголовок
+	setHeader: function(text){
+		jQ('.header_panel').html(text);
+	},
+	//Установить контент
+	setContent(content){
+		jQ('.content_wrapper').html('');
+		jQ('.content_wrapper').append(content);
+	},
+	//Установить кнопки
+	setButtons(source, id){
+		jQ('.bottom_panel').html('');
+		if (typeof(source) == 'string'){//Одна кнопка
+			jQ('.bottom_panel').append('<div id="'+ id +'" class="button orange">'+ source +'</div>')
+		}
+		else{
+			source.forEach(function(text, i){//Много кнопок
+				jQ('.bottom_panel').append('<div id="'+ id[i] +'" class="button orange">'+ text +'</div>')
 			});
-			v.bindUnitsTooltip('.player_unit', s.players[s.curPlayer].army);
-		});
-	},
-	//Открыть экран
-	openScreen: function(screen){
-		if (!(view.curScreen == null)) view.curScreen.addClass('closed');
-		view.curScreen = screen;
-		view.curScreen.removeClass('closed');
-	},
-	//Отобразить последовательность ходов игроков
-	showPlayersOrder: function(){
-		for (var i in steleon.players){
-			jQ('<p class="player_name">' + (Number(i)+1) + ':  ' + steleon.players[i].name + '</p>').appendTo('#players_order .info_text');
 		};
-		jQ('<span> ' + steleon.players[0].name + '</span>').appendTo('#first_turn');
 	},
+	//Отобразить параметры игрока
 	showPlayerParams: function(){
-		jQ('.current_player_name').text(steleon.players[s.curPlayer].name);
-		view.makeUnitsList(steleon.curPlayer, '.units_list');
-		view.updateMagicStack();
+		jQ('.current_player_name').text(s.players[s.curPlayer].name);
+		v.makeUnitsList(s.curPlayer, '.units_list');
+		v.updateMagicStack();
 		jQ('#spell_magic').show();
-		if(steleon.players[steleon.curPlayer].magicCards.length == 0) jQ('#spell_magic').hide();
+		if(s.players[s.curPlayer].magicCards.length == 0) jQ('#spell_magic').hide();
 	},
 	//Обновить список карт игрока в интерфейсе
 	updateMagicStack: function(){
-		view.makeMagicList(steleon.curPlayer, '.magic_cards_stack');
+		v.makeMagicList(s.curPlayer, '.magic_cards_stack');
 	},
 	//Построить разметку списка боевых единиц игрока
 	makeUnitsList: function(playerNum, target){
 		jQ(target).html('');
-		steleon.players[playerNum].army.forEach(function(unit, i){
-			jQ(target).append('<div class="unit_card" data-num="' + i + '"></div>');
-			jQ(target + ' .unit_card').last().css('background-image', 'url("images/units/' + unit.picture + '.png")');
-		});
-		view.bindUnitsTooltip(target + ' .unit_card', steleon.players[playerNum].army);
+		if (playerNum == -1){//Общий список войск
+			s.unitCards.forEach(function(unit, i){
+				if (unit.used) return;
+				jQ(target).append('<div class="unit_card common_unit" data-num="' + i + '"></div>');
+				jQ(target + ' .unit_card').last().css('background-image', 'url("images/units/' + unit.picture + '.png")');
+			});
+			v.bindUnitsTooltip(target + ' .unit_card', s.unitCards);
+		}
+		else{//Для конкретного игрока
+			s.players[playerNum].army.forEach(function(unit, i){
+				jQ(target).append('<div class="unit_card player_unit" data-num="' + i + '" data-source="'+ s.unitCards.indexOf(unit) +'"></div>');
+				jQ(target + ' .unit_card').last().css('background-image', 'url("images/units/' + unit.picture + '.png")');
+			});
+			v.bindUnitsTooltip(target + ' .unit_card', s.players[playerNum].army);
+		};
 	},
 	//Построить разметку списка карт магии игрока
 	makeMagicList: function(playerNum, target){
 		jQ(target).html('');
-		steleon.players[playerNum].magicCards.forEach(function(card, i){
+		s.players[playerNum].magicCards.forEach(function(card, i){
 			jQ(target).append('<div class="magic_card" data-num="' + i + '"></div>');
 		});
 	},
 	//Построить разметку списка игроков-противников
 	makeEnemysList: function(card){
-		jQ('#enemys_list').html('');
-		steleon.players.forEach(function(enemy, i){
-			if (i == steleon.curPlayer) return;
+		v.setContent('<div id="enemys_list"></div>');
+		s.players.forEach(function(enemy, i){
+			if (i == s.curPlayer) return;
 			jQ('#enemys_list').append('<div class="button orange" data-num="' + i + '">'+ enemy.name +'</div>');
-			jQ('#enemys_list .button').click(function(){//нажатие на элемент списка игроков
-				var selectedPlayer = jQ(this).attr('data-num');
-				steleon.modifiers.init(selectedPlayer, card);
-			});
 		});
-		view.openScreen(view.screens.enemysSelector);
+		jQ('#enemys_list .button').click(function(){//нажатие на элемент списка игроков
+			var selectedPlayer = jQ(this).attr('data-num');
+			s.modifiers.init(selectedPlayer, card);
+			s.changePhase();
+		});
 	},
 	//Назначить события всплывающей подсказки
 	bindUnitsTooltip: function(target, source){//Назначить всплывающие подсказки
+		jQ(target).unbind('mouseover');
+		jQ(target).unbind('mouseleave');
 		jQ(target).mouseover(function(){
-			num = jQ(this).attr('data-num');
+			var num = jQ(this).attr('data-num');
 			var text = '<div class="tooltip"><p>'+ source[num].name +'</p><p><span>Артефакт:</span><span>'+ source[num].artefact +'</span></p><p><span>Рукопашный бой:</span><span>'+ source[num].power +'</span></p><p><span>Маневр:</span><span>'+ source[num].speed +'</span></p><p><span>Стрельба:</span><span>'+ source[num].accuracy +'</span></p><p><span>Броня:</span><span>'+ source[num].armor +'</span></p><p><span>Допуск:</span><span>'+ source[num].admission +'</span></p><p><span>Стоимость:</span><span>'+ source[num].price +'</span></p></div>';
-			view.showTooltip(text);
+			v.showTooltip(text);
 		});
 		jQ('.unit_card').mouseleave(function(){
-			view.hideTooltip();
+			v.hideTooltip();
 		});
 	},
 	//Отобразить всплывающую подсказку
@@ -410,36 +350,179 @@ var view = {
 		jQ('#tooltip').html('');
 		jQ('#tooltip').hide();
 	},
-	//Установить текст для кнопки
-	setButtonText: function(text, button){
-		jQ(button).text('');
-		jQ(button).text(text);
-	},
-	//Создать кнопку для отображекния списка врагов
-	showEnemysList: function(text, target, card){
-		jQ(target).html('');
-		jQ(target).append('<div class="button orange select_player">'+ text +'</div>');
-		jQ('.select_player').click(function(){//Выбрать игрока из списка
-			view.makeEnemysList(card);
-			jQ(target).html('');
-		});
-	},
-	//Вывод текста в элемент
-	showInfo: function(text, elem){
-		jQ(elem).html('');
-		jQ(elem).html(text);
-	},
-	showMessage: function(text){//Вывод окна с подсказкой...
-		view.showInfo(text, '#message .info_text');
-		view.openScreen(view.screens.message);
-	},
-	//Убрать кости
-	removeBones: function(){
-		jQ('.bone').remove();
-	},
+	//Получить случайную фразу из массива фраз
 	getRandomPhrase: function(source){
 		var num = Math.round(Math.random() * (source.length - 1));
 		return source[num];
+	}
+};
+//------------------------------------------------------------------------------------------------
+//ОКРУЖЕНИЯ
+var e = {
+	//Меню выбора режима игры
+	modeMenu: function(){
+		v.setHeader('выберите режим игры');
+		v.modeMenuInit();
+	},
+	//Добавление нового игрока
+	newPlayer: function(){
+		v.setHeader('новый игрок');
+		v.setContent('<div class="info_text">Введите имя игрока:</div><input type="text" id="player_name"></input>');
+		v.setButtons('Выбрать армию', 'next_stage');
+		jQ('#next_stage').click(function(){
+			s.addPlayer();
+			e.selectArmy();
+		});
+	},
+	//Выбор арамии игрока
+	selectArmy: function(){
+		v.setHeader('выбор армии игрока <span class="important_text">' + s.players[s.curPlayer].name + '</span>');
+		v.setContent('<div class="side_panel"><p class="label">Доступные войска:</p><div class="army_panel" id="common_army"></div></div><div class="side_panel"><p class="label">Армия игрока. Стоимость: <span id="price" class="important_text">0</span></p><div class="army_panel" id="player_army"></div>');
+		v.makeUnitsList(-1, '#common_army');
+		v.makeUnitsList(s.curPlayer, '#player_army');
+		if (s.players.length < 2) v.setButtons('Добавить игрока', 'add_player')
+		else v.setButtons(['Добавить игрока', 'Начать игру'], ['add_player', 'next_stage']);
+		jQ('#add_player').click(function(){s.resetMods(s.curPlayer); e.newPlayer()});
+		jQ('#next_stage').click(function(){s.resetMods(s.curPlayer); e.playersOrder()});
+		//--------------
+		//РЕДАКТОР АРМИИ
+		//Нажатие на боевых единиц общего списка
+		jQ('.common_unit').click(function(){
+			var sourceNum = jQ(this).attr('data-num');//Индекс в общем списке боевых единиц
+			var unit = s.unitCards[sourceNum];
+			unit.used = true;
+			s.players[s.curPlayer].army.push(unit);
+			v.makeUnitsList(s.curPlayer, '#player_army');
+			jQ(this).hide();
+			jQ('#price').text(s.getArmyPrice(s.curPlayer));
+			//Нажатие на боевых единиц армии игрока
+			selectUnit = function(){
+				var num = jQ(this).attr('data-num');
+				unit = s.players[s.curPlayer].army[num];
+				unit.used = false;
+				s.players[s.curPlayer].army.splice(num, 1);
+				num = jQ(this).attr('data-source');
+				jQ('#common_army').find('[data-num="' + num + '"]').show();
+				v.makeUnitsList(s.curPlayer, '#player_army');
+				jQ('.player_unit').click(selectUnit);
+				price = s.getArmyPrice(s.curPlayer);
+				jQ('#price').text(price);
+				v.hideTooltip();
+			};
+			jQ('.player_unit').click(selectUnit);
+			v.bindUnitsTooltip('.player_unit', s.players[s.curPlayer].army);
+		});
+	},
+	//Отображение последовательности ходов игроков
+	playersOrder: function(){
+		v.setHeader('');
+		var content = '<div class="info_text"><p>Последовательность ходов игроков<br>выбрана случайным образом:</p>';
+		shuffle(s.players);
+		s.players.forEach(function(player, i){
+			content = content + '<p class="player_name">' + (i+1) + ':  ' + player.name + '</p>';
+		});
+		content = content + "</div>";
+		v.setContent(content);
+		v.setButtons('Играть!', 'next_stage');
+		jQ('#next_stage').click(function(){s.changePlayer(true)});
+	},
+	//===================== ФАЗЫ ИГРЫ ========================
+	//Фаза магии
+	phaseMagic: function(){
+		v.setHeader('фаза магии');
+		var content = '<div id="get_magic_card" class="button orange">Изучить магию</div>';
+		if (s.players[s.curPlayer].magicCards.length > 0){
+			content = content + '<div id="spell_magic" class="button orange">Использовать магию</div>';
+		};
+		v.setContent(content);
+		v.setButtons('Пропустить фазу', 'next_phase');
+		jQ('#get_magic_card').click(function(){e.phaseMagicGet()});
+		jQ('#spell_magic').click(function(){e.phaseMagicSpell()});
+		jQ('#next_phase').click(function(){s.changePhase()});
+	},
+	//Фаза магии - получение карты
+	phaseMagicGet: function(){
+		v.setHeader('');
+		v.setContent('<div id="message" class="info_text"></div>');
+		buttons = ['Следующая фаза'];
+		ids = ['next_phase'];
+		var lucky = s.createBones(1);
+		if (lucky == 6){
+			s.getMagicCard(s.curPlayer);
+			s.getMagicCard(s.curPlayer);
+			v.updateMagicStack();
+			jQ('#message').html(v.getRandomPhrase(magicAnswers6) + '<br>Вы получили сразу две карты магии!', '#phase_magic_get .info_text');
+			buttons.push('Применить магию');
+			ids.push('spell_magic');
+		}
+		else if(lucky > 2){
+			s.getMagicCard(s.curPlayer);
+			v.updateMagicStack();
+			jQ('#message').html(v.getRandomPhrase(magicAnswers4) + '<br>Вы получили карту магии!', '#phase_magic_get .info_text');
+			buttons.push('Применить магию');
+			ids.push('spell_magic');
+		}
+		else{
+			jQ('#message').html(v.getRandomPhrase(magicAnswers1) + '<br>Вы не получили карту магии.', '#phase_magic_get .info_text');
+		};
+		v.setButtons(buttons, ids);
+		jQ('#next_phase').click(function(){s.changePhase()});
+		jQ('#spell_magic').click(function(){e.phaseMagicSpell()});
+	},
+	//Применение карты магии
+	phaseMagicSpell: function(){
+		v.setHeader('');
+		var card = s.players[s.curPlayer].magicCards[0];
+		var content = '<div class="info_text">' + card[0] + '</div>';
+		if (card[1] == 'moving'){//перемещение
+			if (card[2] == 'simple'){//простое
+				content = content + '<div class="info_text"><p class="help">выполните действия на игровом поле</p></div>';
+				v.setButtons('Выполнено', 'next_phase');
+			};
+		};
+		if (card[1] == 'playerMod'){//модификация параметров игрока
+			if (card[3] == 'select'){
+				if (s.players.length == 2){
+					s.modifiers.init(s.players.length - 1 - s.curPlayer, card)//если только 2 игрока
+					v.setButtons('Следующая фаза', 'next_phase');
+				}
+				else v.setButtons('Выбрать противника', 'pick_enemy');//если игроков более двух
+			};
+			if (card[3] == 'self'){
+				s.modifiers.init(s.curPlayer, card);
+				v.setButtons('Следующая фаза', 'next_phase');
+			};
+		};
+		v.setContent(content);
+		s.magicCardsTrash.push(card);
+		s.players[s.curPlayer].magicCards.splice(0, 1);
+		v.updateMagicStack();
+		jQ('#next_phase').click(function(){s.changePhase()});
+		jQ('#pick_enemy').click(function(){
+			v.makeEnemysList(card);
+			jQ('.bottom_panel').html('');
+		});
+	},
+	phaseMove: function(){
+		v.setContent('Фаза манёвра');
+		v.setButtons('Следующая фаза', 'next_phase');
+		jQ('#next_phase').click(function(){s.changePhase()});
+	},
+	phaseFight: function(){
+		v.setContent('Фаза рукопашного боя');
+		v.setButtons('Следующая фаза', 'next_phase');
+		jQ('#next_phase').click(function(){s.changePhase()});
+	},
+	phaseShoot: function(){
+		v.setContent('Фаза стрельбы');
+		v.setButtons('Следующая фаза', 'next_phase');
+		jQ('#next_phase').click(function(){s.changePhase()});
+	},
+	//Окно сообщения
+	message: function(text){
+		v.setContent('<div class="info_text">' + text + '</div>');
+		v.setButtons('Понятно', 'next_phase');
+		jQ('#next_phase').click(function(){s.changePhase()});
 	}
 };
 
@@ -452,6 +535,10 @@ function shuffle(array){
 };
 //Загрузка страницы
 jQ(document).ready(function(){
-	steleon.init();
-	console.log(steleon);
+	s.init();
+	console.log(s);
+	jQ(window).resize(function(){
+		jQ('.board').width(0.97 * jQ('.board').height());
+	});
+	jQ(window).resize();
 });

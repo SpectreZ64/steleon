@@ -1,5 +1,5 @@
-﻿id;name;artefact;power;speed;accuracy;armor;admission;price;picture;count
-1;Урук-Таг I;DarkTag;4;0;-1;3;K.A;52;ut1;2
-2;Урук-Таг II;DarkTag;3;2;-1;1;K.A.P.MP;46;ut2;4
-3;Урук-Таг III;DarkTag;3;2;-1;1;K.A;44;ut3;1
-4;Урук-Таг IV;DarkTag;4;1;-1;2;P.MP;48;ut4;1
+name;artefact;power;speed;accuracy;armor;admission;price;picture;count
+Урук-Таг I;DarkTag;4;0;-1;3;K.A;52;ut1;2
+Урук-Таг II;DarkTag;3;2;-1;1;K.A.P.MP;46;ut2;4
+Урук-Таг III;DarkTag;3;2;-1;1;K.A;44;ut3;1
+Урук-Таг IV;DarkTag;4;1;-1;2;P.MP;48;ut4;1

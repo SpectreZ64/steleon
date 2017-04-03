@@ -18,7 +18,7 @@
 						while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
 							$num = count($data);
 							$params = [];
-							$count = 0;
+
 							for ($c=0; $c < $num; $c++) {//Сбор массива параметров
 								if ($data[$c] == '') continue;
 								array_push($params, $data[$c]);
@@ -32,123 +32,47 @@
 					};
 				?>
 			</div>
+			<div id="units_data" class="hidden">
+				<?php
+					//Построение списка боевых единиц
+					$row = 1;
+					$number = 0;
+					if (($handle = fopen("data/units.csv", "r")) !== FALSE) {
+						$headers = [];
+						while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
+							$num = count($data);
+							if ($row == 1){//Создание массива заголовков
+								for ($c=0; $c < $num-1; $c++){
+									array_push($headers, $data[$c]);
+								}
+								$row++;
+								continue;
+							};
+							$params = [];
+							$count = 0;
+							for ($c=0; $c < $num; $c++) {//Сбор массива параметров
+								if ($c < $num-1) $params[$headers[$c]] = $data[$c];
+								else $count = $data[$c];
+							};
+							for ($i=0; $i < $count; $i++){
+								echo ('<div class="unit_card_data" data-num="' . $number . '" data-params="');
+								echo (htmlspecialchars(json_encode($params)));
+								echo ('"></div>');
+								$number++;
+							};
+							$row++;
+						};
+						fclose($handle);
+					};
+				?>
+			</div>
 		</div>
 		<div class="background"></div>
 		<div id="tooltip"></div>
 		<div class="board">
-			<div class="content_wrapper">
-				<div class="closed page" id="mode_selector"><!--Выбор режима игры-->
-					<div class="button mode_btn mode_traditional" data-mode="0">Традиция</div>
-					<div class="button mode_btn mode_ultra disabled" data-mode="1">Ультра</div>
-					<div class="button mode_btn mode_marines disabled" data-mode="2">Бронепехота</div>
-				</div>
-				<div class="closed page" id="player_creator"><!--Создание игрока-->
-					<div>
-						<p class="label">Имя игрока</p>
-						<input type="text" id="player_name"></input>
-						<br>
-					</div>
-					<div class="bottom_panel">
-						<div class="button orange" id="set_player">Выбрать Армию</div>
-					</div>
-				</div>
-				<div class="closed page" id="army_editor"><!--Выбор армии игрока-->
-					<div class="side_panel">
-						<p class="label">Доступные войска:</p>
-						<div class="army_panel" id="common_army">
-							<div class="scroll_wrapper">
-								<?php
-									//Построение списка боевых единиц
-									$row = 1;
-									$number = 0;
-									if (($handle = fopen("data/units.csv", "r")) !== FALSE) {
-										$headers = [];
-										while (($data = fgetcsv($handle, 1000, ";")) !== FALSE) {
-											$num = count($data);
-											if ($row == 1){//Создание массива заголовков
-												for ($c=0; $c < $num-1; $c++){
-													array_push($headers, $data[$c]);
-												}
-												$row++;
-												continue;
-											};
-											$params = [];
-											$count = 0;
-											for ($c=0; $c < $num; $c++) {//Сбор массива параметров
-												if ($c < $num-1) $params[$headers[$c]] = $data[$c];
-												else $count = $data[$c];
-											};
-											for ($i=0; $i < $count; $i++){
-												echo ('<div class="unit_card common_unit" data-num="' . $number . '" data-params="');
-												echo (htmlspecialchars(json_encode($params)));
-												echo ('"></div>');
-												$number++;
-											};
-											$row++;
-										};
-										fclose($handle);
-									};
-								?>
-							</div>
-						</div>
-					</div>
-					<div class="side_panel">
-						<p class="label">Армия игрока:</p>
-						<div class="army_panel"><div class="scroll_wrapper" id="player_army"></div></div>
-					</div>
-					<div style="height: 80px;"></div>
-					<div class="bottom_panel">
-						<div class="button orange" id="set_army">Готово</div>
-					</div>
-				</div>
-				<div class="closed page" id="game_starter"><!--Добавление нового игрока или старт игры-->
-					<div class="button green" id="add_player">Добавить игрока</div>
-					<div class="button orange" id="start_game">Начать игру</div>
-				</div>
-				<div class="closed page" id="players_order"><!--Информация о порядке ходов игроков-->
-					<div class="info_text">
-						<p>Порядок ходов игроков определен<br>случайным образом:</p>
-					</div>
-					<div class="bottom_panel">
-						<div class="button orange" id="first_turn">Ход игрока</div>
-					</div>
-				</div>
-				<div class="closed page" id="phase_magic"><!--Фаза магии-->
-					<div class="button green" id="spell_magic">Применить магию</div>
-					<div class="button orange" id="get_magic_card">Изучить магию</div>
-				</div>
-				<div class="closed page phase_magic" id="phase_magic_get"><!--Получение карты магии-->
-					<div class="info_text"></div>
-					<div class="bones_wrapper"></div>
-					<div class="bottom_panel">
-						<div class="button orange next_phase">Готово</div>
-					</div>
-				</div>
-				<div class="closed page phase_magic" id="phase_magic_spell"><!--Применение карты магии-->
-					<div class="info_text"></div>
-					<div class="actions_list"></div>
-					<div class="bottom_panel">
-						<div class="button orange next_phase">Далее</div>
-					</div>
-				</div>
-				<div class="closed page" id="units_selector"><!--Окно выбора боевых единиц игрока-->
-					<div class="info_text"></div>
-					<div class="army_panel"><div class="scroll_wrapper"></div></div>
-					<div class="bottom_panel">
-						<div class="button orange">Выбрать</div>
-					</div>
-				</div>
-				<div class="closed page" id="enemys_selector"><!--Окно выбора противника-->
-					<div class="info_text">Выберите противника:</div>
-					<div id="enemys_list"></div>
-				</div>
-				<div class="closed page" id="message"><!--Окно сообщения-->
-					<div class="info_text"></div>
-					<div class="bottom_panel">
-						<div class="button orange next_phase">Понятно</div>
-					</div>
-				</div>
-			</div>
+			<div class="header_panel"></div>
+			<div class="content_wrapper"></div>
+			<div class="bottom_panel"></div>
 		</div>
 		<div class="current_player_name"></div>
 		<div class="magic_cards_stack"></div>
