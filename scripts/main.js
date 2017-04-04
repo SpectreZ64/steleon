@@ -215,13 +215,6 @@ var s = {
 	},
 	//Модификаторы параметров
 	modifiers: {
-		init: function(player, card){
-			switch(card[1]){
-				case 'playerMod': 
-					s.modifiers.player(player, card);//установка модификаторов для игрока
-					break;
-			};
-		},
 		player: function(player, card){
 			var phases = s.players[player].mods.phases;
 			if(card[2] == 'turn'){
@@ -232,10 +225,46 @@ var s = {
 				phases.shoot = (card[8] == 'null') ? phases.shoot : phases.shoot + Number(card[8]);
 			};
 		},
-		units: function(type, player, units, params){
-			//
+		//модификация параметров боевых единиц
+		units: function(units, card){
+			if (card[2] == 'inc'){
+				units.forEach(function(unit, i){
+					var mods = unit.mods.inc;
+					mods.armor = (card[5] == 'null') ? mods.armor : Number(card[5]);
+					mods.fight = (card[6] == 'null') ? mods.fight : Number(card[6]);
+					mods.move = (card[7] == 'null') ? mods.move : Number(card[7]);
+					mods.shoot = (card[8] == 'null') ? mods.shoot : Number(card[8]);
+				});
+			}
+			else if (card[2] == 'coef'){
+				units.forEach(function(unit, i){
+					var mods = unit.mods.coef;
+					mods.armor = (card[5] == 'null') ? mods.armor : Number(card[5]);
+					mods.fight = (card[6] == 'null') ? mods.fight : Number(card[6]);
+					mods.move = (card[7] == 'null') ? mods.move : Number(card[7]);
+					mods.shoot = (card[8] == 'null') ? mods.shoot : Number(card[8]);
+				});
+			}
+			else if (card[2] == 'rep'){
+				units.forEach(function(unit, i){
+					var mods = unit.mods.rep;
+					mods.armor = (card[5] == 'null') ? mods.armor : Number(card[5]);
+					mods.fight = (card[6] == 'null') ? mods.fight : Number(card[6]);
+					mods.move = (card[7] == 'null') ? mods.move : Number(card[7]);
+					mods.shoot = (card[8] == 'null') ? mods.shoot : Number(card[8]);
+				});
+			}
+			else if (card[2] == 'coefBonus'){
+				units.forEach(function(unit, i){
+					var mods = unit.mods.coefBonus;
+					mods.armor = (card[5] == 'null') ? mods.armor : Number(card[5]);
+					mods.fight = (card[6] == 'null') ? mods.fight : Number(card[6]);
+					mods.move = (card[7] == 'null') ? mods.move : Number(card[7]);
+					mods.shoot = (card[8] == 'null') ? mods.shoot : Number(card[8]);
+				});
+			}
 		},
-		magic: function(type, player, count, condition){
+		magic: function(player, card){
 			//
 		}
 	}
@@ -323,8 +352,32 @@ var v = {
 		});
 		jQ('#enemys_list .button').click(function(){//нажатие на элемент списка игроков
 			var selectedPlayer = jQ(this).attr('data-num');
-			s.modifiers.init(selectedPlayer, card);
-			s.changePhase();
+			if (card[1] == 'playerMod'){
+				s.modifiers.player(selectedPlayer, card);
+				s.changePhase();
+			};
+			if (card[1] == 'unitsMod'){
+				if (card[4] == 'all'){
+					s.modifiers.units(s.players[selectedPlayer].army, card);
+				}
+				else v.makeUnitsSelector(selectedPlayer, card);
+			};
+		});
+	},
+	makeUnitsSelector: function(player, card){
+		v.setContent('<div id="units_selector"></div>');
+		makeUnitsList(player, '#units_selector');
+		v.setButtons('Выбрать', 'pick_units');
+		jQ('.unit_card').click(function(){
+			if (jQ(this).hasClass('selected')) jQ(this.removeClass('selected'))
+			else jQ(this).addClass('selected');
+		});
+		jQ('#pick_units').click(function(){
+			units = [];
+			jQ('.unit_card.selected').each(function(i, elem){
+				units.push(s.players[player].army[jQ(elem).attr('data-num')]);
+			});
+			s.modifiers.units(units, card);
 		});
 	},
 	//Назначить события всплывающей подсказки
@@ -481,15 +534,32 @@ var e = {
 			};
 		};
 		if (card[1] == 'playerMod'){//модификация параметров игрока
-			if (card[3] == 'select'){
-				if (s.players.length == 2){
-					s.modifiers.init(s.players.length - 1 - s.curPlayer, card)//если только 2 игрока
+			if (card[3] == 'select'){//врага
+				if (s.players.length == 2){//если только 2 игрока
+					s.modifiers.player(s.players.length - 1 - s.curPlayer, card)
 					v.setButtons('Следующая фаза', 'next_phase');
 				}
 				else v.setButtons('Выбрать противника', 'pick_enemy');//если игроков более двух
 			};
-			if (card[3] == 'self'){
-				s.modifiers.init(s.curPlayer, card);
+			if (card[3] == 'self'){//самого игрока
+				s.modifiers.player(s.curPlayer, card);
+				v.setButtons('Следующая фаза', 'next_phase');
+			};
+		};
+		if (card[1] == 'unitsMod'){//модификация параметров боевых единиц
+			if (card[3] == 'select'){//чужую армию
+				if (s.players.length == 2){//если только 2 игрока
+					if (card[4] == 'all'){//на все боевые единицы
+						s.modifiers.units(s.players[s.curPlayer].army, card);
+						v.setButtons('Следующая фаза', 'next_phase');
+					}
+					else
+						v.setButtons('Указать боевые единицы', 'pick_units');
+				}
+				else v.setButtons('Выбрать противника', 'pick_enemy');
+			};
+			if (card[3] == 'self'){//армию самого игрока
+				s.modifiers.units(s.curPlayer.army, card);
 				v.setButtons('Следующая фаза', 'next_phase');
 			};
 		};
@@ -501,6 +571,9 @@ var e = {
 		jQ('#pick_enemy').click(function(){
 			v.makeEnemysList(card);
 			jQ('.bottom_panel').html('');
+		});
+		jQ('#pick_units').click(function(){
+			v.makeUnitsSelector(s.curPlayer, card);
 		});
 	},
 	phaseMove: function(){

@@ -84,9 +84,9 @@ input{
 	border-radius: 8px;
 	border: solid 1px RGBA(208, 153, 88, 0.5);
 	background-image: url('images/bg_light.jpg');
-	-webkit-box-shadow: inset 0px 6px 8px 0px rgba(0,0,0,0.49);
-	-moz-box-shadow: inset 0px 6px 8px 0px rgba(0,0,0,0.49);
-	box-shadow: inset 0px 6px 8px 0px rgba(0,0,0,0.49);
+	-webkit-box-shadow: inset 0px 6px 4px 0px rgba(0,0,0,0.49);
+	-moz-box-shadow: inset 0px 6px 4px 0px rgba(0,0,0,0.49);
+	box-shadow: inset 0px 6px 4px 0px rgba(0,0,0,0.49);
 }
 .background{
 	position: fixed;
